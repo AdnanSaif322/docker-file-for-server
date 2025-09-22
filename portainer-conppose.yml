@@ -1,0 +1,105 @@
+version: "3.9"
+
+services:
+  # -----------------------------
+  # Jellyfin
+  # -----------------------------
+  jellyfin:
+    image: linuxserver/jellyfin:10.10.7
+    container_name: jellyfin
+    ports:
+      - "8096:8096"
+    volumes:
+      - /mnt/StorageNaN_nvme0n1p1/docker/jellyfin/config:/config
+      - /mnt/StorageNaN_nvme0n1p1/docker/jellyfin/media:/media
+    restart: unless-stopped
+
+  # -----------------------------
+  # Vaultwarden
+  # -----------------------------
+  vaultwarden:
+    image: vaultwarden/server:1.32.7
+    container_name: vaultwarden
+    environment:
+      - ROCKET_ADDRESS=0.0.0.0
+      - ROCKET_PORT=80
+      - DEBIAN_FRONTEND=noninteractive
+    ports:
+      - "10380:80"
+    volumes:
+      - /mnt/StorageNaN_nvme0n1p1/docker/vaultwarden/data:/data
+    restart: unless-stopped
+
+  # -----------------------------
+  # Pi-hole
+  # -----------------------------
+  pihole:
+    image: pihole/pihole:2025.06.2
+    container_name: pi-hole
+    environment:
+      - TZ=UTC
+      - FTLCONF_webserver_api_password=piholeradmin
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "67:67/udp"
+      - "8080:80"
+      - "10443:443"
+    volumes:
+      - /mnt/StorageNaN_nvme0n1p1/docker/pi-hole/etc-pihole:/etc/pihole
+      - /mnt/StorageNaN_nvme0n1p1/docker/pi-hole/etc-dnsmasq.d:/etc/dnsmasq.d
+    restart: unless-stopped
+
+  # -----------------------------
+  # Cloudflared
+  # -----------------------------
+  cloudflared:
+    image: wisdomsky/cloudflared-web:2025.2.1
+    container_name: cloudflared
+    restart: unless-stopped
+
+  # -----------------------------
+  # Devcontainer
+  # -----------------------------
+  devcontainer:
+    build: /mnt/StorageNaN_nvme0n1p1/docker/devcontainer
+    container_name: devcontainer
+    ports:
+      - "7681:7681"
+    restart: unless-stopped
+
+  # -----------------------------
+  # Anime Tracker Backend
+  # -----------------------------
+  anime-backend:
+    build: /mnt/StorageNaN_nvme0n1p1/docker/anime-tracker-backend
+    container_name: anime-backend
+    env_file:
+      - /mnt/StorageNaN_nvme0n1p1/docker/anime-tracker-backend/.env
+    expose:
+      - "8787"
+    restart: unless-stopped
+
+  # -----------------------------
+  # Anime Tracker Frontend
+  # -----------------------------
+  anime-frontend:
+    build: /mnt/StorageNaN_nvme0n1p1/docker/anime-tracker-frontend
+    container_name: anime-frontend
+    env_file:
+      - /mnt/StorageNaN_nvme0n1p1/docker/anime-tracker-frontend/.env.production
+    ports:
+      - "30080:80"
+    depends_on:
+      - anime-backend
+    restart: unless-stopped
+
+  # -----------------------------
+  # Redis for Anime Tracker / future use
+  # -----------------------------
+  anime-redis:
+    image: redis:6.2-alpine
+    container_name: anime-redis
+    expose:
+      - "6379"
+    restart: unless-stopped
