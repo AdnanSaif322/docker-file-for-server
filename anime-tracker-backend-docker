@@ -1,0 +1,14 @@
+# Use full Node image with CA certificates
+FROM node:20-bullseye
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+RUN npm run build
+
+EXPOSE 8787
+CMD ["node", "dist/index.js"]
+
